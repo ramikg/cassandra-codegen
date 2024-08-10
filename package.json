@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Generate type definitions from a Cassandra database",
   "author": "ramikg",
-  "license": "ISC",
+  "license": "MIT",
   "keywords": [
     "cassandra",
     "scylladb",
