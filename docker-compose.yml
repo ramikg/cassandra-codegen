@@ -1,0 +1,25 @@
+  services:
+    cassandra:
+      image: cassandra:4
+      environment:
+         # Disable vnodes and "waiting for gossip to settle", for faster startup times
+        - JVM_OPTS=-Dcassandra.initial_token=0 -Dcassandra.skip_wait_for_gossip_to_settle=0
+      ports:
+        - "9042:9042"
+      healthcheck:
+        test: cqlsh -e "DESCRIBE KEYSPACES"
+        interval: 5s
+        timeout: 5s
+        retries: 15
+    cassandra-setup:
+      image: python:3.12
+      depends_on:
+        cassandra:
+          condition: service_healthy
+      volumes:
+        - ./test/setup.cql:/setup.cql
+      command: >
+        /bin/sh -c "
+        python -m pip install cqlsh &&
+        cqlsh cassandra 9042 -f /setup.cql
+        "
