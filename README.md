@@ -46,7 +46,7 @@ Additionally, a mapper named `cyclistCategoryMapper` is generated, which is simi
 1. Install using `npm install cassandra-codegen`.
 2. In your project, run:
    ```
-   cassandra-codegen --host <host> --port <port> --datacenter <datacenter> --uesrname <username> --password <password>
+   cassandra-codegen --host <host> --port <port> --datacenter <datacenter> --username <username> --password <password> --keyspace <keyspace>
    ```
    
    Run `cassandra-codegen -h` for extra CLI options.
