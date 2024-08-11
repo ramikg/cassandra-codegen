@@ -49,7 +49,9 @@ Additionally, a mapper named `cyclistCategoryMapper` is generated, which is simi
    cassandra-codegen --host <host> --port <port> --datacenter <datacenter> --username <username> --password <password> --keyspace <keyspace>
    ```
    
-   Run `cassandra-codegen -h` for extra CLI options.
+   Notes:
+   - Run `cassandra-codegen -h` for extra CLI options.
+   - You may have to run `npm exec cassandra-codegen -- args`, depending on your environment.
 
 3. In your code (usually inside some `init` function), add the following call:
    ```typescript

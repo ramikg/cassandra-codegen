@@ -8,6 +8,8 @@ import {join} from "path";
 const parseArgs = () => {
     const program = new Command();
 
+    const defaultOutputDir = join(process.cwd(), 'node_modules', 'cassandra-codegen', 'types');
+
     program.name('cassandra-codegen')
         .description('Generate type definitions from a Cassandra database')
         .requiredOption('--host <host>', 'The Cassandra DB hostname or IP address')
@@ -16,7 +18,7 @@ const parseArgs = () => {
         .option('--username <username>', 'The Cassandra DB username (optional)')
         .option('--password <password>', 'The Cassandra DB password (optional)')
         .requiredOption('--keyspace <keyspace>', 'The keyspace of the tables for which to generate type definitions')
-        .option('--output-path <outputPath>', 'Path of output file')
+        .option('--output-dir <outputDir>', 'Directory of generated files', defaultOutputDir)
         .option('--type-suffix <typeSuffix>', 'A suffix to add to the generated type names', 'Row')
         .option('--use-js-map', 'Map the Cassandra `map` type to the JavaScript `Map` type')
         .option('--use-js-set', 'Map the Cassandra `set` type to the JavaScript `Set` type')
@@ -42,11 +44,10 @@ const main = async () => {
     try {
         await client.connect();
 
-        const defaultOutputPath = join(process.cwd(), 'node_modules', 'cassandra-codegen', 'types', 'generated.ts');
         await generateTypeScriptDefinitions(
             client,
             args.keyspace,
-            args.outputPath ? args.outputPath : defaultOutputPath,
+            args.outputDir,
             args.typeSuffix,
             args.useJsMap,
             args.useJsSet

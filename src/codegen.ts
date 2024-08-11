@@ -11,6 +11,8 @@ type CassandraColumnInfo = {
     type: string,
 };
 
+const DEFAULT_GENERATED_FILENAME = 'generated.ts';
+
 async function getTableNames(client: Client, keyspaceName: string): Promise<string[]> {
     const query = 'SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?';
     const result = await client.execute(query, [keyspaceName]);
@@ -28,7 +30,7 @@ async function getTableColumns(client: Client, keyspaceName: string, tableName: 
 export async function generateTypeScriptDefinitions(
     client: Client,
     keyspaceName: string,
-    outputPath: string,
+    outputDir: string,
     typeNameSuffix: string,
     useJsMap: boolean,
     useJsSet: boolean
@@ -39,8 +41,8 @@ export async function generateTypeScriptDefinitions(
         return;
     }
 
-    const tsMorphProject = new Project();
-    const sourceFile = tsMorphProject.createSourceFile(outputPath, {}, { overwrite: true });
+    const tsMorphProject = new Project({compilerOptions: {outDir: outputDir, declaration: true, 'sourceMap': true}});
+    const sourceFile = tsMorphProject.createSourceFile(DEFAULT_GENERATED_FILENAME, {}, {overwrite: true});
 
     sourceFile.addImportDeclarations([
         {
@@ -131,5 +133,5 @@ export async function generateTypeScriptDefinitions(
         ],
     });
 
-    await tsMorphProject.save();
+    await tsMorphProject.emit();
 }
