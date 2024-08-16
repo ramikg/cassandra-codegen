@@ -1,7 +1,8 @@
-import {Client} from 'cassandra-driver';
+import {Client, mapping} from 'cassandra-driver';
 import {Project, StructureKind, VariableDeclarationKind} from 'ts-morph';
-import {camelCase, upperFirst} from 'lodash';
+import {upperFirst} from 'lodash';
 import {cassandraTypeToTsType} from "./cassandra-types";
+import {join} from "path";
 
 type CassandraColumnInfo = {
     column_name: string,
@@ -13,6 +14,14 @@ type CassandraColumnInfo = {
 
 const DEFAULT_GENERATED_FILENAME = 'generated.ts';
 const MAPPINGS_OBJECT_VARIABLE_NAME = 'mappingsObject';
+
+const underscoreCqlToCamelCaseMappingsObject = new mapping.UnderscoreCqlToCamelCaseMappings();
+
+function camelCase(s: string) {
+    // The cassandra-driver implementation is slightly different from that of Lodash.
+    // Also, it assumes that the input is in snake case, which is why we convert it to lowercase.
+    return underscoreCqlToCamelCaseMappingsObject.getPropertyName(s.toLowerCase());
+}
 
 async function getTableNames(client: Client, keyspaceName: string): Promise<string[]> {
     const query = 'SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?';
