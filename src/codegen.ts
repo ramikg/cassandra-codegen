@@ -42,6 +42,7 @@ export async function generateTypeScriptDefinitions(
     keyspaceName: string,
     outputDir: string,
     typeNameSuffix: string,
+    generateTsFile: boolean,
     useJsMap: boolean,
     useJsSet: boolean
 ) {
@@ -52,7 +53,7 @@ export async function generateTypeScriptDefinitions(
     }
 
     const tsMorphProject = new Project({compilerOptions: {outDir: outputDir, declaration: true, 'sourceMap': true}});
-    const sourceFile = tsMorphProject.createSourceFile(DEFAULT_GENERATED_FILENAME, {}, {overwrite: true});
+    const sourceFile = tsMorphProject.createSourceFile(join(outputDir, DEFAULT_GENERATED_FILENAME), {}, {overwrite: true});
 
     sourceFile.addImportDeclarations([
         {
@@ -151,5 +152,9 @@ export async function generateTypeScriptDefinitions(
         ],
     });
 
-    await tsMorphProject.emit();
+    if (generateTsFile) {
+        await tsMorphProject.save();
+    } else {
+        await tsMorphProject.emit();
+    }
 }

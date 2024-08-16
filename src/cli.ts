@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node-script
 
-import {Command} from "commander";
+import {Command, Option} from "commander";
 import {Client} from "cassandra-driver";
 import {generateTypeScriptDefinitions} from "./codegen";
 import {join} from "path";
@@ -18,10 +18,12 @@ const parseArgs = () => {
         .option('--username <username>', 'The Cassandra DB username (optional)')
         .option('--password <password>', 'The Cassandra DB password (optional)')
         .requiredOption('--keyspace <keyspace>', 'The keyspace of the tables for which to generate type definitions')
-        .option('--output-dir <outputDir>', 'Directory of generated files', defaultOutputDir)
         .option('--type-suffix <typeSuffix>', 'A suffix to add to the generated type names', 'Row')
+        .option('--generate-ts-file', 'Generate a .ts file instead of the default .js & .d.ts')
         .option('--use-js-map', 'Map the Cassandra `map` type to the JavaScript `Map` type')
         .option('--use-js-set', 'Map the Cassandra `set` type to the JavaScript `Set` type')
+        // Currently used only for tests
+        .addOption(new Option('--output-dir <outputDir>', 'Directory of generated files').default(defaultOutputDir).hideHelp())
 
     program.parse();
 
@@ -49,6 +51,7 @@ const main = async () => {
             args.keyspace,
             args.outputDir,
             args.typeSuffix,
+            args.generateTsFile,
             args.useJsMap,
             args.useJsSet
         );
