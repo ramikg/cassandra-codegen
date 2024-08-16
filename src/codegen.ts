@@ -12,6 +12,7 @@ type CassandraColumnInfo = {
 };
 
 const DEFAULT_GENERATED_FILENAME = 'generated.ts';
+const MAPPINGS_OBJECT_VARIABLE_NAME = 'mappingsObject';
 
 async function getTableNames(client: Client, keyspaceName: string): Promise<string[]> {
     const query = 'SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?';
@@ -94,6 +95,14 @@ export async function generateTypeScriptDefinitions(
         console.log(`Generated type & mapper for table "${tableName}"`);
     }
 
+    sourceFile.addVariableStatement({
+        declarationKind: VariableDeclarationKind.Const,
+        declarations: [{
+            name: MAPPINGS_OBJECT_VARIABLE_NAME,
+            initializer: 'new mapping.UnderscoreCqlToCamelCaseMappings()'
+        }],
+    });
+
     sourceFile.addFunction({
         name: 'initMappers',
         isExported: true,
@@ -116,7 +125,7 @@ export async function generateTypeScriptDefinitions(
                         writer.setIndentationLevel(1);
                         tableNames.forEach(tableName => {
                             const modelName = upperFirst(camelCase(tableName));
-                            writer.writeLine(`'${modelName}': { tables: ['${tableName}'], mappings: new mapping.UnderscoreCqlToCamelCaseMappings() },`);
+                            writer.writeLine(`'${modelName}': { tables: ['${tableName}'], mappings: ${MAPPINGS_OBJECT_VARIABLE_NAME} },`);
                         });
                         writer.setIndentationLevel(0);
                         writer.writeLine('}})');
