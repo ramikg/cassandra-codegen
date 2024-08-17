@@ -1,6 +1,6 @@
 import {Client, mapping} from 'cassandra-driver';
 import {Project, StructureKind, VariableDeclarationKind} from 'ts-morph';
-import {upperFirst} from 'lodash';
+import {lowerFirst, upperFirst} from 'lodash';
 import {cassandraTypeToTsType} from "./cassandra-types";
 import {basename, join} from "path";
 
@@ -17,7 +17,7 @@ const MAPPINGS_OBJECT_VARIABLE_NAME = 'mappingsObject';
 
 const underscoreCqlToCamelCaseMappingsObject = new mapping.UnderscoreCqlToCamelCaseMappings();
 
-function camelCase(s: string) {
+function snakeCaseToCamelCase(s: string) {
     // The cassandra-driver implementation is slightly different from that of Lodash.
     // Also, it assumes that the input is in snake case, which is why we convert it to lowercase.
     return underscoreCqlToCamelCaseMappingsObject.getPropertyName(s.toLowerCase());
@@ -76,7 +76,7 @@ export async function generateTypeScriptDefinitions(
         const columns = await getTableColumns(client, keyspaceName, tableName);
 
         const interfaceDeclaration = sourceFile.addInterface({
-            name: upperFirst(camelCase(tableName) + typeNameSuffix),
+            name: upperFirst(snakeCaseToCamelCase(tableName) + typeNameSuffix),
             isExported: true,
         });
 
@@ -90,7 +90,7 @@ export async function generateTypeScriptDefinitions(
             }
 
             interfaceDeclaration.addProperty({
-                name: camelCase(column.column_name),
+                name: snakeCaseToCamelCase(column.column_name),
                 type: tsType,
             });
         });
@@ -98,7 +98,7 @@ export async function generateTypeScriptDefinitions(
         sourceFile.addVariableStatement({
             declarationKind: VariableDeclarationKind.Let,
             declarations: [{
-                name: camelCase(tableName) + 'Mapper',
+                name: snakeCaseToCamelCase(tableName) + 'Mapper',
                 type: `CodegenModelMapper<${interfaceDeclaration.getName()}>`,
             }],
             isExported: true,
@@ -136,7 +136,7 @@ export async function generateTypeScriptDefinitions(
                         writer.writeLine('models: {');
                         writer.setIndentationLevel(1);
                         tableNames.forEach(tableName => {
-                            const modelName = upperFirst(camelCase(tableName));
+                            const modelName = upperFirst(snakeCaseToCamelCase(tableName));
                             writer.writeLine(`'${modelName}': { tables: ['${tableName}'], mappings: ${MAPPINGS_OBJECT_VARIABLE_NAME} },`);
                         });
                         writer.setIndentationLevel(0);
@@ -145,9 +145,9 @@ export async function generateTypeScriptDefinitions(
                 }],
             },
             writer => {
-                tableNames.forEach(table => {
-                    const modelName = upperFirst(camelCase(table));
-                    const mapperName = camelCase(`${modelName}`) + 'Mapper';
+                tableNames.forEach(tableName => {
+                    const modelName = upperFirst(snakeCaseToCamelCase(tableName));
+                    const mapperName = lowerFirst(modelName) + 'Mapper';
                     writer.writeLine(`${mapperName} = mapper.forModel('${modelName}');`);
                 });
             }
