@@ -1,6 +1,7 @@
 import {describe, expect, test} from "tstyche";
 import {mapping} from "cassandra-driver";
 import {testMapper, TestRow} from "../../types/generated";
+import {queryOperator} from "../../src/query-operator";
 
 describe("Sanity type tests", () => {
     test("mapper.find()", () => {
@@ -48,3 +49,16 @@ describe("Sanity type tests", () => {
         expect(testMapper.remove({partitionKey1: '', partitionKey2: '', clustering1: '', clustering2: ''})).type.toBe<Promise<mapping.Result<TestRow>>>;
     });
 });
+
+describe("Query operators", () => {
+    test("Sanity", () => {
+        expect(testMapper.get({partitionKey1: '', partitionKey2: '', clustering1: queryOperator.gte('')})).type.toRaiseError();
+        expect(testMapper.get({partitionKey1: '', partitionKey2: '', clustering1: '', clustering2: queryOperator.gte(0)})).type.toRaiseError();
+
+        expect(testMapper.get({partitionKey1: '', partitionKey2: '', clustering1: '', clustering2: queryOperator.gte('')})).type.toBe<Promise<TestRow | null>>;
+
+        expect(testMapper.find({partitionKey1: '', partitionKey2: queryOperator.in_([0, 1])})).type.toRaiseError();
+
+        expect(testMapper.find({partitionKey1: '', partitionKey2:  queryOperator.in_(['', '0']) })).type.toBe<Promise<mapping.Result<TestRow>>>;
+    });
+})
