@@ -13,7 +13,10 @@
     "type": "git",
     "url": "git+https://github.com/ramikg/cassandra-codegen.git"
   },
-  "main": "./types/generated.js",
+  "exports": {
+    ".": "./types/generated.js",
+    "./query-operator": "./src/query-operator.ts"
+  },
   "scripts": {
     "build": "tsc",
     "test": "jest",
