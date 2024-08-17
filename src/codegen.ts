@@ -2,7 +2,7 @@ import {Client, mapping} from 'cassandra-driver';
 import {Project, StructureKind, VariableDeclarationKind} from 'ts-morph';
 import {upperFirst} from 'lodash';
 import {cassandraTypeToTsType} from "./cassandra-types";
-import {join} from "path";
+import {basename, join} from "path";
 
 type CassandraColumnInfo = {
     column_name: string,
@@ -46,6 +46,8 @@ export async function generateTypeScriptDefinitions(
     useJsMap: boolean,
     useJsSet: boolean
 ) {
+    const startTime = performance.now();
+
     const tableNames = await getTableNames(client, keyspaceName);
     if (!tableNames.length) {
         console.warn(`Keyspace ${keyspaceName} has no tables. Nothing to generate.`);
@@ -157,4 +159,10 @@ export async function generateTypeScriptDefinitions(
     } else {
         await tsMorphProject.emit();
     }
+
+    const pluralSuffix = tableNames.length === 1 ? '' : 's';
+    const timeTookInMs = Math.round(performance.now() - startTime);
+    const outputPath = join(outputDir, basename(DEFAULT_GENERATED_FILENAME, '.ts'))
+        + (generateTsFile ? '.ts' : '.{js, d.ts}');
+    console.log(`✓ Introspected ${tableNames.length} table${pluralSuffix} and generated ${outputPath} in ${timeTookInMs}ms.`);
 }
