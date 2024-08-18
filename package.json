@@ -9,6 +9,7 @@
     "scylladb",
     "cql"
   ],
+  "files": ["src/", "dist/"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ramikg/cassandra-codegen.git"
