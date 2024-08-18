@@ -1,6 +1,6 @@
 {
   "name": "cassandra-codegen",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Generate type definitions from a Cassandra database",
   "author": "ramikg",
   "license": "MIT",
