@@ -1,5 +1,5 @@
 import {mapping} from "cassandra-driver";
-import {CodegenQueryOperator} from "../types/utils";
+import {CodegenQueryOperator} from "./types/utils";
 
 export const queryOperator = {
     // Not the actual return type. This is an ugly hack to squeeze type-safety out of the third party QueryOperator functions.

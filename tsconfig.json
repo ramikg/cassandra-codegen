@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
+    "declaration": true,
     "outDir": "dist",
     "target": "ESNext",
     "module": "NodeNext",
@@ -8,7 +9,7 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
   },
-  "exclude": [
-    "test"
-  ]
+  "include": [
+    "src/**/*.ts"
+  ],
 }

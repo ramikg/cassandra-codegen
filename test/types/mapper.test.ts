@@ -1,7 +1,6 @@
 import {describe, expect, test} from "tstyche";
 import {mapping} from "cassandra-driver";
-import {testMapper, TestRow} from "../../types/generated";
-import {queryOperator} from "../../src/query-operator";
+import {testMapper, TestRow, queryOperator} from "../../src";
 
 describe("Sanity type tests", () => {
     test("mapper.find()", () => {

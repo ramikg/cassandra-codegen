@@ -8,7 +8,7 @@ import {join} from "path";
 const parseArgs = () => {
     const program = new Command();
 
-    const defaultOutputDir = join(process.cwd(), 'node_modules', 'cassandra-codegen', 'types');
+    const defaultOutputDir = join(process.cwd(), 'node_modules', 'cassandra-codegen', 'dist', 'types');
 
     program.name('cassandra-codegen')
         .description('Generate type definitions from a Cassandra database')

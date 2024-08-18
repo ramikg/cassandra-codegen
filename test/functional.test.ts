@@ -1,6 +1,5 @@
 import {Client} from "cassandra-driver";
-import {initMappers, testMapper} from "../types/generated";
-import {queryOperator} from "../src/query-operator";
+import {initMappers, testMapper, queryOperator} from "../src";
 
 let client: Client;
 
