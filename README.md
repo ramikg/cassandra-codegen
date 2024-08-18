@@ -66,3 +66,24 @@ Additionally, a mapper named `cyclistCategoryMapper` is generated, which is simi
    
    const cyclistCategory = await cyclistCategoryMapper.get({...});
    ```
+
+## Additional instructions
+
+### Using query operators
+
+You can use the query operators available in `cassandra-driver` in a type-safe manner.
+For example:
+
+```typescript
+   import { cyclistCategoryMapper } from "cassandra-codegen";
+   import { queryOperator } from "cassandra-codegen/query-operator";
+
+   await cyclistCategoryMapper.find({
+      category: 'GC',
+      points: queryOperator.gte(42),
+   });
+```
+
+> [!NOTE]
+> Importing `queryOperator` as above requires `moduleResolution` to be set to `nodenext`.  
+> If the module resolution is `node`, import it from `"cassandra-codegen/src/query-operator"`.
