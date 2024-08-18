@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node-script
+#!/usr/bin/env node
 
 import {Command, Option} from "commander";
 import {Client} from "cassandra-driver";

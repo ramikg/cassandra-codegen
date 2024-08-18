@@ -20,11 +20,11 @@ jobs:
           npm run build
       - name: Run tests
         run: |
+          npm install .
           docker compose up --wait
           # TODO: Wait for cassandra-setup. Unfortunately `service_completed_successfully` doesn't work as expected
-          npm install -g ts-node .
-          cassandra-codegen --host localhost --datacenter datacenter1 --keyspace test --output-dir src/types
           sleep 3
+          npm exec cassandra-codegen -- --host localhost --datacenter datacenter1 --keyspace test --output-dir src/types
           npm run test:types
           npm run test
       - uses: actions/upload-artifact@v4

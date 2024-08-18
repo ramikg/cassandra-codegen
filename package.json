@@ -21,7 +21,7 @@
     "test:types": "tstyche"
   },
   "bin": {
-    "cassandra-codegen": "src/cli.ts"
+    "cassandra-codegen": "./dist/cli.js"
   },
   "dependencies": {
     "cassandra-driver": "^4.7.2",
