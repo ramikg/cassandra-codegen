@@ -83,15 +83,21 @@ export async function generateTypeScriptDefinitions(
         columns.forEach(column => {
             let tsType = cassandraTypeToTsType(column.type, useJsMap, useJsSet);
 
-            if (column.kind === 'partition_key') {
-                tsType = `PartitionKey<${tsType}>`;
-            } else if (column.kind === 'clustering') {
-                tsType = `Clustering<${tsType}, '${column.clustering_order}'>`;
+            const isPartOfPrimaryKey = ['partition_key', 'clustering'].includes(column.kind);
+            if (isPartOfPrimaryKey) {
+                if (column.kind === 'partition_key') {
+                    tsType = `PartitionKey<${tsType}>`;
+                } else if (column.kind === 'clustering') {
+                    tsType = `Clustering<${tsType}, '${column.clustering_order}'>`;
+                }
+            } else {
+                tsType += ' | null';
             }
 
             interfaceDeclaration.addProperty({
                 name: snakeCaseToCamelCase(column.column_name),
                 type: tsType,
+                hasQuestionToken: !isPartOfPrimaryKey,
             });
         });
 

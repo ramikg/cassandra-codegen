@@ -18,7 +18,7 @@ CREATE TABLE cyclist_category (
     category text,
     points int,
     id UUID,
-    lastname text,
+    last_name text,
     PRIMARY KEY (category, points)
 ) WITH CLUSTERING ORDER BY (points DESC);
 ```
@@ -30,8 +30,8 @@ CREATE TABLE cyclist_category (
 export interface CyclistCategoryRow {
     category: PartitionKey<string>;
     points: Clustering<number, 'desc'>;
-    id: types.Uuid;
-    lastname: string;
+    id?: types.Uuid | null;
+    lastName?: string | null;
 }
 ```
 
@@ -51,7 +51,7 @@ Additionally, a mapper named `cyclistCategoryMapper` is generated, which is simi
    
    Notes:
    - Run `cassandra-codegen -h` for extra CLI options.
-   - You may have to run `npm exec cassandra-codegen -- args`, depending on your environment.
+   - You may have to run `npm exec cassandra-codegen -- <args>`, depending on your environment.
 
 3. In your code (usually inside some `init` function), add the following call:
    ```typescript
