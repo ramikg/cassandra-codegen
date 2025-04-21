@@ -45,7 +45,7 @@ function cassandraInnerTypeToTsType(cassandraType: string): string {
 
 export function cassandraTypeToTsType(cassandraType: string, useJsMap: boolean, useJsSet: boolean): string {
     // More complex nestings are currently not supported.
-    const frozenCollectionRegex = /(?<isFrozen>frozen)?<?(?<frozenType>set|map|list)<(?<innerType>\w+)(?:,(?<secondInnerType>\w+))?>>?/;
+    const frozenCollectionRegex = /(?<isFrozen>frozen)?<?(?<frozenType>set|map|list)<(?<innerType>\w+)(?:, *(?<secondInnerType>\w+))?>>?/;
 
     const frozenCollectionRegexMatch = cassandraType.match(frozenCollectionRegex);
     if (frozenCollectionRegexMatch?.groups) {
