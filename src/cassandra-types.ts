@@ -68,20 +68,20 @@ export function cassandraTypeToTsType(cassandraType: string, useJsMap: boolean, 
                 resultType = `Array<${innerType}`;
                 break;
             case 'map':
-                if (useJsMap) {
-                    const cassandraSecondInnerType = frozenCollectionRegexMatch.groups.secondInnerType;
-                    if (!cassandraSecondInnerType) {
-                        throw new Error(`Invalid Cassandra type ${cassandraType}`);
-                    }
-                    const secondInnerType = cassandraInnerTypeToTsType(cassandraSecondInnerType);
-                    if (secondInnerType === CASSANDRA_UNKNOWN_TYPE) {
-                        return CASSANDRA_UNKNOWN_TYPE;
-                    }
-                    resultType = `Map<${innerType}, ${secondInnerType}>`;
-                } else {
+                const cassandraSecondInnerType = frozenCollectionRegexMatch.groups.secondInnerType;
+                if (!cassandraSecondInnerType) {
+                    throw new Error(`Invalid Cassandra type ${cassandraType}`);
+                }
+                const secondInnerType = cassandraInnerTypeToTsType(cassandraSecondInnerType);
+                if (secondInnerType === CASSANDRA_UNKNOWN_TYPE) {
                     return CASSANDRA_UNKNOWN_TYPE;
                 }
 
+                if (useJsMap) {
+                    resultType = `Map<${innerType}, ${secondInnerType}>`;
+                } else {
+                    resultType = `Record<${innerType}, ${secondInnerType}>`;
+                }
                 break;
         }
         const isFrozen = frozenCollectionRegexMatch.groups.isFrozen != undefined;
