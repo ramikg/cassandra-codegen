@@ -1,4 +1,4 @@
-const CASSANDRA_ANY_TYPE = 'any';
+const CASSANDRA_UNKNOWN_TYPE = 'unknown';
 
 function cassandraInnerTypeToTsType(cassandraType: string): string {
     switch (cassandraType) {
@@ -38,8 +38,8 @@ function cassandraInnerTypeToTsType(cassandraType: string): string {
         case 'decimal':
             return 'types.BigDecimal';
         default:
-            console.warn(`Unsupported Cassandra type ${cassandraType}. Setting TypeScript type to "${CASSANDRA_ANY_TYPE}".`);
-            return CASSANDRA_ANY_TYPE;
+            console.warn(`Unsupported Cassandra type ${cassandraType}. Setting TypeScript type to "${CASSANDRA_UNKNOWN_TYPE}".`);
+            return CASSANDRA_UNKNOWN_TYPE;
     }
 }
 
@@ -50,8 +50,8 @@ export function cassandraTypeToTsType(cassandraType: string, useJsMap: boolean, 
     const frozenCollectionRegexMatch = cassandraType.match(frozenCollectionRegex);
     if (frozenCollectionRegexMatch?.groups) {
         const innerType = cassandraInnerTypeToTsType(frozenCollectionRegexMatch.groups.innerType);
-        if (innerType === CASSANDRA_ANY_TYPE) {
-            return CASSANDRA_ANY_TYPE;
+        if (innerType === CASSANDRA_UNKNOWN_TYPE) {
+            return CASSANDRA_UNKNOWN_TYPE;
         }
 
         let resultType = '';
@@ -74,12 +74,12 @@ export function cassandraTypeToTsType(cassandraType: string, useJsMap: boolean, 
                         throw new Error(`Invalid Cassandra type ${cassandraType}`);
                     }
                     const secondInnerType = cassandraInnerTypeToTsType(cassandraSecondInnerType);
-                    if (secondInnerType === CASSANDRA_ANY_TYPE) {
-                        return CASSANDRA_ANY_TYPE;
+                    if (secondInnerType === CASSANDRA_UNKNOWN_TYPE) {
+                        return CASSANDRA_UNKNOWN_TYPE;
                     }
                     resultType = `Map<${innerType}, ${secondInnerType}>`;
                 } else {
-                    return 'any';
+                    return CASSANDRA_UNKNOWN_TYPE;
                 }
 
                 break;
