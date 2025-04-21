@@ -20,7 +20,9 @@ const parseArgs = () => {
         .requiredOption('--keyspace <keyspace>', 'The keyspace of the tables for which to generate type definitions')
         .option('--type-suffix <typeSuffix>', 'A suffix to add to the generated type names', 'Row')
         .option('--generate-ts-file', 'Generate a .ts file instead of the default .js & .d.ts')
+        // To be used in conjunction with the Node.js Cassandra client is configured to use ECMAScript Map
         .option('--use-js-map', 'Map the Cassandra `map` type to the JavaScript `Map` type')
+        // To be used in conjunction with the Node.js Cassandra client is configured to use ECMAScript Set
         .option('--use-js-set', 'Map the Cassandra `set` type to the JavaScript `Set` type')
         // Currently used only for tests
         .addOption(new Option('--output-dir <outputDir>', 'Directory of generated files').default(defaultOutputDir).hideHelp())
