@@ -27,7 +27,7 @@
     "cassandra-codegen": "./dist/cli.js"
   },
   "dependencies": {
-    "cassandra-driver": "^4.7.2",
+    "cassandra-driver": "^4.9.0",
     "commander": "^12.1.0",
     "lodash": "^4.17.21",
     "ts-morph": "^23.0.0"
