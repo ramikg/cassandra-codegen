@@ -1,5 +1,5 @@
 import {Client, mapping} from 'cassandra-driver';
-import {Project, StructureKind, VariableDeclarationKind} from 'ts-morph';
+import {ModuleKind, Project, StructureKind, VariableDeclarationKind} from 'ts-morph';
 import {lowerFirst, upperFirst} from 'lodash';
 import {cassandraTypeToTsType} from "./cassandra-types";
 import {basename, join} from "path";
@@ -54,7 +54,12 @@ export async function generateTypeScriptDefinitions(
         return;
     }
 
-    const tsMorphProject = new Project({compilerOptions: {outDir: outputDir, declaration: true, 'sourceMap': true}});
+    const tsMorphProject = new Project({compilerOptions: {
+        outDir: outputDir,
+        declaration: true,
+        sourceMap: true,
+        module: ModuleKind.CommonJS,
+    }});
     const sourceFile = tsMorphProject.createSourceFile(join(outputDir, DEFAULT_GENERATED_FILENAME), {}, {overwrite: true});
 
     sourceFile.addImportDeclarations([
