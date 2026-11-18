@@ -1,8 +1,8 @@
 import {Client, mapping} from 'cassandra-driver';
-import {ModuleKind, Project, StructureKind, VariableDeclarationKind} from 'ts-morph';
+import {ModuleKind, Node, Project, SourceFile, StructureKind, VariableDeclarationKind} from 'ts-morph';
 import {lowerFirst, upperFirst} from 'lodash';
 import {cassandraTypeToTsType} from "./cassandra-types";
-import {basename, join} from "path";
+import {basename, extname, join, resolve} from "path";
 
 type CassandraColumnInfo = {
     column_name: string,
@@ -14,6 +14,12 @@ type CassandraColumnInfo = {
 
 const DEFAULT_GENERATED_FILENAME = 'generated.ts';
 const MAPPINGS_OBJECT_VARIABLE_NAME = 'mappingsObject';
+
+// The package's own source files the generated code depends on. A standalone file inlines them,
+// in this order (each may use the ones before it), so that it imports nothing but cassandra-driver.
+// They are read from the package's `src` directory, which is published alongside `dist`.
+const PACKAGE_SRC_DIR = join(__dirname, '..', 'src');
+const STANDALONE_INLINED_FILES = ['types/utils.ts', 'types/mapper.ts', 'query-operator.ts'];
 
 const underscoreCqlToCamelCaseMappingsObject = new mapping.UnderscoreCqlToCamelCaseMappings();
 
@@ -37,6 +43,20 @@ async function getTableColumns(client: Client, keyspaceName: string, tableName: 
         .sort((a, b) => a.kind === b.kind ? 0 : a.kind === 'partition_key' || (a.kind === 'clustering' && b.kind === 'regular') ? -1 : 1);
 }
 
+// Copies every statement of the package's own support files (types, mapper interface, query operators)
+// into `sourceFile`, leaving out their imports: the relative ones are inlined too, and the
+// cassandra-driver one is already on `sourceFile`.
+function inlinePackageSources(project: Project, sourceFile: SourceFile) {
+    for (const relativePath of STANDALONE_INLINED_FILES) {
+        const supportFile = project.addSourceFileAtPath(join(PACKAGE_SRC_DIR, relativePath));
+        const statements = supportFile.getStatements()
+            .filter(statement => !Node.isImportDeclaration(statement))
+            .map(statement => statement.getText());
+        sourceFile.addStatements(statements);
+        project.removeSourceFile(supportFile);
+    }
+}
+
 export async function generateTypeScriptDefinitions(
     client: Client,
     keyspaceName: string,
@@ -44,7 +64,8 @@ export async function generateTypeScriptDefinitions(
     typeNameSuffix: string,
     generateTsFile: boolean,
     useJsMap: boolean,
-    useJsSet: boolean
+    useJsSet: boolean,
+    outputFile?: string
 ) {
     const startTime = performance.now();
 
@@ -54,28 +75,41 @@ export async function generateTypeScriptDefinitions(
         return;
     }
 
+    if (outputFile !== undefined && extname(outputFile) !== '.ts') {
+        throw new Error(`--output-file must be a .ts file, got ${outputFile}`);
+    }
+
     const tsMorphProject = new Project({compilerOptions: {
         outDir: outputDir,
         declaration: true,
         sourceMap: true,
         module: ModuleKind.CommonJS,
     }});
-    const sourceFile = tsMorphProject.createSourceFile(join(outputDir, DEFAULT_GENERATED_FILENAME), {}, {overwrite: true});
+    const sourceFilePath = outputFile !== undefined ? resolve(outputFile) : join(outputDir, DEFAULT_GENERATED_FILENAME);
+    const sourceFile = tsMorphProject.createSourceFile(sourceFilePath, {}, {overwrite: true});
 
-    sourceFile.addImportDeclarations([
-        {
-            namedImports: ['PartitionKey', 'Clustering'],
-            moduleSpecifier: './utils',
-        },
-        {
-            namedImports: ['CodegenModelMapper'],
-            moduleSpecifier: './mapper',
-        },
-        {
+    if (outputFile !== undefined) {
+        sourceFile.addImportDeclaration({
             namedImports: ['Client', 'mapping', 'types'],
             moduleSpecifier: 'cassandra-driver',
-        }
-    ]);
+        });
+        inlinePackageSources(tsMorphProject, sourceFile);
+    } else {
+        sourceFile.addImportDeclarations([
+            {
+                namedImports: ['PartitionKey', 'Clustering'],
+                moduleSpecifier: './utils',
+            },
+            {
+                namedImports: ['CodegenModelMapper'],
+                moduleSpecifier: './mapper',
+            },
+            {
+                namedImports: ['Client', 'mapping', 'types'],
+                moduleSpecifier: 'cassandra-driver',
+            }
+        ]);
+    }
 
     for (const tableName of tableNames) {
         const columns = await getTableColumns(client, keyspaceName, tableName);
@@ -159,21 +193,28 @@ export async function generateTypeScriptDefinitions(
                 tableNames.forEach(tableName => {
                     const modelName = upperFirst(snakeCaseToCamelCase(tableName));
                     const mapperName = lowerFirst(modelName) + 'Mapper';
-                    writer.writeLine(`${mapperName} = mapper.forModel('${modelName}');`);
+                    // forModel returns the driver's ModelMapper, which CodegenModelMapper narrows: checked as .ts, it needs the assertion
+                    writer.writeLine(`${mapperName} = mapper.forModel('${modelName}') as CodegenModelMapper<${modelName}${typeNameSuffix}>;`);
                 });
             }
         ],
     });
 
-    if (generateTsFile) {
-        await tsMorphProject.save();
+    if (outputFile !== undefined) {
+        // It lives in the consumer's source tree, where it may be mistaken for hand-written code
+        sourceFile.insertText(0, '// Generated by cassandra-codegen. Do not edit: regenerate it instead.\n\n');
+    }
+
+    if (outputFile !== undefined || generateTsFile) {
+        await sourceFile.save();
     } else {
         await tsMorphProject.emit();
     }
 
     const pluralSuffix = tableNames.length === 1 ? '' : 's';
     const timeTookInMs = Math.round(performance.now() - startTime);
-    const outputPath = join(outputDir, basename(DEFAULT_GENERATED_FILENAME, '.ts'))
-        + (generateTsFile ? '.ts' : '.{js, d.ts}');
+    const outputPath = outputFile !== undefined
+        ? sourceFilePath
+        : join(outputDir, basename(DEFAULT_GENERATED_FILENAME, '.ts')) + (generateTsFile ? '.ts' : '.{js, d.ts}');
     console.log(`✓ Introspected ${tableNames.length} table${pluralSuffix} and generated ${outputPath} in ${timeTookInMs}ms.`);
 }

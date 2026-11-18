@@ -1,5 +1,6 @@
 import {Client} from "cassandra-driver";
-import {initMappers, testMapper, queryOperator} from "../src";
+import * as packageOutput from "../src";
+import * as standaloneOutput from "./standalone/generated";
 
 let client: Client;
 
@@ -11,14 +12,23 @@ beforeAll(async () => {
     });
     await client.connect();
 
-    await initMappers(client);
+    await packageOutput.initMappers(client);
+    await standaloneOutput.initMappers(client);
 });
 
 afterAll(async () => {
     await client.shutdown();
 })
 
-describe("Functional", () => {
+// The same flows through the code generated into the package and through the standalone --output-file
+describe.each([
+    ["package", packageOutput],
+    ["standalone", standaloneOutput],
+] as const)("Functional (%s)", (_, output) => {
+    // Read off the module at test time: the mappers are assigned by initMappers, after this runs
+    const testMapper = () => output.testMapper;
+    const {queryOperator} = output;
+
     test("Sanity", async () => {
         const primaryKey = {partitionKey1: '', partitionKey2: '', clustering1: '', clustering2: ''};
         const testRow = {
@@ -27,8 +37,8 @@ describe("Functional", () => {
             ...primaryKey,
         };
 
-        await testMapper.insert(testRow);
-        expect(await testMapper.get(primaryKey)).toEqual(testRow);
+        await testMapper().insert(testRow);
+        expect(await testMapper().get(primaryKey)).toEqual(testRow);
     });
 
     test("Query operators sanity", async () => {
@@ -41,9 +51,9 @@ describe("Functional", () => {
             extraColumn2: '',
         };
 
-        await testMapper.insert(testRow);
+        await testMapper().insert(testRow);
 
-        const findResult = await testMapper.find({
+        const findResult = await testMapper().find({
             partitionKey1: testRow.partitionKey1,
             partitionKey2: queryOperator.in_([testRow.partitionKey2, testRow.partitionKey2 + '0']),
         });
@@ -51,7 +61,7 @@ describe("Functional", () => {
         expect(foundRows.length).toBe(1);
         expect(foundRows[0]).toEqual(testRow);
 
-        const findResult2 = await testMapper.find({
+        const findResult2 = await testMapper().find({
             partitionKey1: testRow.partitionKey1,
             partitionKey2: queryOperator.in_([testRow.partitionKey2 + '0']),
         });

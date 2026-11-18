@@ -20,6 +20,8 @@ const parseArgs = () => {
         .requiredOption('--keyspace <keyspace>', 'The keyspace of the tables for which to generate type definitions')
         .option('--type-suffix <typeSuffix>', 'A suffix to add to the generated type names', 'Row')
         .option('--generate-ts-file', 'Generate a .ts file instead of the default .js & .d.ts')
+        // A standalone file can live in the consumer's own source tree, so the package is needed only to generate it
+        .option('--output-file <outputFile>', 'Generate a single standalone .ts file at this path, which imports only cassandra-driver, instead of generating into this package')
         // To be used in conjunction with the Node.js Cassandra client is configured to use ECMAScript Map
         .option('--use-js-map', 'Map the Cassandra `map` type to the JavaScript `Map` type')
         // To be used in conjunction with the Node.js Cassandra client is configured to use ECMAScript Set
@@ -55,7 +57,8 @@ const main = async () => {
             args.typeSuffix,
             args.generateTsFile,
             args.useJsMap,
-            args.useJsSet
+            args.useJsSet,
+            args.outputFile
         );
     } catch (error: any) {
         console.error(`Encountered error: ${error?.message}`);
