@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 
-import {Command, Option} from "commander";
+import {Command, InvalidArgumentError, Option} from "commander";
 import {Client} from "cassandra-driver";
 import {generateTypeScriptDefinitions} from "./codegen";
-import {join} from "path";
+import {extname, join} from "path";
+
+const parseTsFilePath = (value: string) => {
+    if (extname(value) !== '.ts') {
+        throw new InvalidArgumentError('Must be a .ts file.');
+    }
+    return value;
+}
 
 const parseArgs = () => {
     const program = new Command();
@@ -20,6 +27,9 @@ const parseArgs = () => {
         .requiredOption('--keyspace <keyspace>', 'The keyspace of the tables for which to generate type definitions')
         .option('--type-suffix <typeSuffix>', 'A suffix to add to the generated type names', 'Row')
         .option('--generate-ts-file', 'Generate a .ts file instead of the default .js & .d.ts')
+        .addOption(new Option('--standalone-file-path <standaloneFilePath>', 'Generate a single standalone .ts file at this path, which imports only cassandra-driver, instead of generating into this package')
+            .argParser(parseTsFilePath)
+            .conflicts(['generateTsFile', 'outputDir']))
         // To be used in conjunction with the Node.js Cassandra client is configured to use ECMAScript Map
         .option('--use-js-map', 'Map the Cassandra `map` type to the JavaScript `Map` type')
         // To be used in conjunction with the Node.js Cassandra client is configured to use ECMAScript Set
@@ -55,7 +65,8 @@ const main = async () => {
             args.typeSuffix,
             args.generateTsFile,
             args.useJsMap,
-            args.useJsSet
+            args.useJsSet,
+            args.standaloneFilePath
         );
     } catch (error: any) {
         console.error(`Encountered error: ${error?.message}`);

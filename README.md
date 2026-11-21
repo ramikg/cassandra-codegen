@@ -69,6 +69,15 @@ Additionally, a mapper named `cyclistCategoryMapper` is generated, which is simi
 
 ## Additional instructions
 
+### Generating a standalone file
+
+By default, the generated code is written into the `cassandra-codegen` package itself, so the package becomes a runtime dependency.
+To generate a standalone `.ts` file in your own source tree instead, pass `--standalone-file-path`:
+
+```
+cassandra-codegen <args> --standalone-file-path src/db/cassandra/mappers.ts
+```
+
 ### Using query operators
 
 You can use the query operators available in `cassandra-driver` in a type-safe manner.
