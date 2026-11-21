@@ -71,18 +71,11 @@ Additionally, a mapper named `cyclistCategoryMapper` is generated, which is simi
 
 ### Generating a standalone file
 
-By default, the generated code is written into the `cassandra-codegen` package itself, so the package is needed at runtime.
-To generate a single standalone `.ts` file into your own source tree instead, pass `--output-file`:
+By default, the generated code is written into the `cassandra-codegen` package itself, so the package becomes a runtime dependency.
+To generate a standalone `.ts` file in your own source tree instead, pass `--standalone-file-path`:
 
 ```
-cassandra-codegen <args> --output-file src/db/cassandra-types.ts
-```
-
-The file includes everything the generated mappers need (the types, `initMappers` and `queryOperator`), and imports nothing but `cassandra-driver`.
-Import from it instead of from `cassandra-codegen`, which can then be a dev dependency:
-
-```typescript
-import { initMappers, cyclistCategoryMapper, queryOperator } from "./db/cassandra-types";
+cassandra-codegen <args> --standalone-file-path src/db/cassandra/mappers.ts
 ```
 
 ### Using query operators

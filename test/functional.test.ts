@@ -20,7 +20,6 @@ afterAll(async () => {
     await client.shutdown();
 })
 
-// The same flows through the code generated into the package and through the standalone --output-file
 describe.each([
     ["package", packageOutput],
     ["standalone", standaloneOutput],
