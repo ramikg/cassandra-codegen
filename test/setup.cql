@@ -17,3 +17,10 @@ CREATE TABLE IF NOT EXISTS test (
 
     PRIMARY KEY ((partition_key1, partition_key2), clustering1, clustering2)
 );
+
+CREATE TABLE IF NOT EXISTS table_options (
+    id text PRIMARY KEY
+) WITH comment = 'Non-default options */ with a comment terminator'
+    AND default_time_to_live = 3600
+    AND gc_grace_seconds = 3600
+    AND compaction = {'class': 'LeveledCompactionStrategy'};

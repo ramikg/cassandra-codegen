@@ -12,8 +12,18 @@ type CassandraColumnInfo = {
     type: string,
 };
 
+type CassandraTableInformation = {
+    table_name: string,
+    compaction: Record<string, string>,
+    default_time_to_live: number,
+    gc_grace_seconds: number,
+    comment: string,
+};
+
 const DEFAULT_GENERATED_FILENAME = 'generated.ts';
 const MAPPINGS_OBJECT_VARIABLE_NAME = 'mappingsObject';
+const DEFAULT_TIME_TO_LIVE = 0;
+const DEFAULT_GC_GRACE_SECONDS = 864000;
 
 const PACKAGE_SRC_DIR = join(__dirname, '..', 'src');
 const STANDALONE_INLINED_FILES = ['types/utils.ts', 'types/mapper.ts', 'query-operator.ts'];
@@ -26,10 +36,25 @@ function snakeCaseToCamelCase(s: string) {
     return underscoreCqlToCamelCaseMappingsObject.getPropertyName(s.toLowerCase());
 }
 
-async function getTableNames(client: Client, keyspaceName: string): Promise<string[]> {
-    const query = 'SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?';
-    const result = await client.execute(query, [keyspaceName]);
-    return result.rows.map(row => row.table_name);
+async function getTables(client: Client, keyspaceName: string): Promise<CassandraTableInformation[]> {
+    const query = 'SELECT table_name, comment, compaction, default_time_to_live, gc_grace_seconds FROM system_schema.tables WHERE keyspace_name = ?';
+    return (await client.execute(query, [keyspaceName])).rows as unknown as CassandraTableInformation[];
+}
+
+function getTableOptionsDocs(table: CassandraTableInformation): string {
+    const compaction = Object.entries(table.compaction).map(([key, value]) => `'${key}': '${value}'`).join(', ');
+    const lines = [
+        `compaction: \`{${compaction}}\``,
+        `default_time_to_live: ${table.default_time_to_live}${table.default_time_to_live === DEFAULT_TIME_TO_LIVE ? ' (default)' : ''}`,
+        `gc_grace_seconds: ${table.gc_grace_seconds}${table.gc_grace_seconds === DEFAULT_GC_GRACE_SECONDS ? ' (default)' : ''}`,
+    ];
+    if (table.comment) {
+        lines.push(`comment: ${table.comment}`);
+    }
+    // Indent continuation lines (of a multi-line comment) to keep them in their list item
+    const listItems = lines.map(line => ` - ${line.replaceAll('\n', '\n   ')}`).join('\n');
+    // A "*/" in the options would close the doc comment early
+    return `/**\n${listItems.replaceAll('*/', '*\\/')}\n */\n`;
 }
 
 async function getTableColumns(client: Client, keyspaceName: string, tableName: string): Promise<CassandraColumnInfo[]> {
@@ -63,11 +88,12 @@ export async function generateTypeScriptDefinitions(
 ) {
     const startTime = performance.now();
 
-    const tableNames = await getTableNames(client, keyspaceName);
-    if (!tableNames.length) {
+    const tables = await getTables(client, keyspaceName);
+    if (!tables.length) {
         console.warn(`Keyspace ${keyspaceName} has no tables. Nothing to generate.`);
         return;
     }
+    const tableNames = tables.map(table => table.table_name);
 
     const tsMorphProject = new Project({compilerOptions: {
         outDir: outputDir,
@@ -101,7 +127,8 @@ export async function generateTypeScriptDefinitions(
         ]);
     }
 
-    for (const tableName of tableNames) {
+    for (const table of tables) {
+        const tableName = table.table_name;
         const columns = await getTableColumns(client, keyspaceName, tableName);
 
         const interfaceDeclaration = sourceFile.addInterface({
@@ -131,6 +158,7 @@ export async function generateTypeScriptDefinitions(
         });
 
         sourceFile.addVariableStatement({
+            leadingTrivia: getTableOptionsDocs(table),
             declarationKind: VariableDeclarationKind.Let,
             declarations: [{
                 name: snakeCaseToCamelCase(tableName) + 'Mapper',
